@@ -1,6 +1,5 @@
-# app.py
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory, render_template
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -15,12 +14,18 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=client_id, 
 @app.route('/quiz', methods=['GET'])
 def get_quiz():
     results = sp.playlist_tracks(playlist_id)
-    tracks = [{'name': item['track']['name'], 'artist': item['track']['artists'][0]['name']} for item in results['items']]
+    tracks = [
+        {
+            'name': item['track']['name'],
+            'artist': item['track']['artists'][0]['name'],
+            'preview_url': item['track']['preview_url']
+        } for item in results['items']
+    ]
     return jsonify(tracks)
 
 @app.route('/')
 def home():
-    return jsonify({'message': 'Welcome to the Intro Quiz App!'})
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

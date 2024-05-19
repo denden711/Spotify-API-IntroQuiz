@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Intro Quiz</title>
+</head>
+<body>
+    <h1>Spotify Intro Quiz</h1>
+    <div id="quiz-container"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const response = await fetch('/quiz');
+            const tracks = await response.json();
+            const quizContainer = document.getElementById('quiz-container');
+
+            tracks.forEach(track => {
+                const trackElement = document.createElement('div');
+                trackElement.innerHTML = `
+                    <p><strong>${track.name}</strong> by ${track.artist}</p>
+                    <button onclick="playPreview('${track.preview_url}')">Play Intro</button>
+                `;
+                quizContainer.appendChild(trackElement);
+            });
+        });
+
+        function playPreview(url) {
+            const audio = new Audio(url);
+            audio.play();
+        }
+    </script>
+</body>
+</html>
