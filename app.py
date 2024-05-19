@@ -109,4 +109,6 @@ def on_stop_intro(data):
     emit('stop_intro', room=room)
 
 if __name__ == '__main__':
+    import eventlet
+    eventlet.monkey_patch()
     socketio.run(app, debug=True)
