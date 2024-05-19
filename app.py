@@ -6,12 +6,15 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
+# 'eventlet'を使用するためにパッチを適用
+import eventlet
+eventlet.monkey_patch()
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
-# 'eventlet'が正しくインストールされているか確認し、'async_mode'を指定
-async_mode = 'eventlet'
-socketio = SocketIO(app, async_mode=async_mode)
+# 'eventlet'をasync_modeに指定
+socketio = SocketIO(app, async_mode='eventlet')
 
 client_id = os.getenv('SPOTIPY_CLIENT_ID')
 client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
@@ -109,6 +112,4 @@ def on_stop_intro(data):
     emit('stop_intro', room=room)
 
 if __name__ == '__main__':
-    import eventlet
-    eventlet.monkey_patch()
     socketio.run(app, debug=True)
