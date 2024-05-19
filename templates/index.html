@@ -10,76 +10,32 @@
             text-align: center;
             margin-top: 50px;
         }
-        #quiz-container, #multiplayer-container {
-            display: none;
-        }
-        #multiplayer-quiz-container {
+        #quiz-container {
             display: none;
         }
     </style>
 </head>
 <body>
     <h1>Spotify Intro Quiz</h1>
-    <div id="solo-container">
-        <h2>Solo Play</h2>
-        <form id="playlist-form">
-            <label for="playlist_url">Spotify Playlist URL:</label>
-            <input type="text" id="playlist_url" name="playlist_url" required>
-            <button type="submit">Start</button>
-        </form>
-        <div id="quiz-container">
-            <p id="track-info"></p>
-            <input type="range" id="playback-time" min="0.1" max="30" step="0.1" value="10">
-            <span id="playback-time-label">10.0 seconds</span>
-            <br>
-            <button id="play-button">Play Intro</button>
-            <button id="stop-button" disabled>Stop</button>
-            <button id="next-button">Next</button>
-            <button id="answer-button">Answer</button>
-            <p id="answer" style="display: none;"></p>
-        </div>
+    <form id="playlist-form">
+        <label for="playlist_url">Spotify Playlist URL:</label>
+        <input type="text" id="playlist_url" name="playlist_url" required>
+        <button type="submit">Start</button>
+    </form>
+    <div id="quiz-container">
+        <p id="track-info"></p>
+        <input type="range" id="playback-time" min="0.1" max="30" step="0.1" value="10">
+        <span id="playback-time-label">10.0 seconds</span>
+        <br>
+        <button id="play-button">Play Intro</button>
+        <button id="stop-button" disabled>Stop</button>
+        <button id="next-button">Next</button>
+        <button id="answer-button">Answer</button>
+        <p id="answer" style="display: none;"></p>
     </div>
-
-    <div id="multiplayer-container">
-        <h2>Multiplayer</h2>
-        <div>
-            <form id="create-room-form">
-                <button type="submit">Create Room</button>
-            </form>
-            <form id="join-room-form">
-                <label for="join-room-id">Room ID:</label>
-                <input type="text" id="join-room-id" required>
-                <button type="submit">Join Room</button>
-            </form>
-        </div>
-        <div id="host-controls" style="display: none;">
-            <h3>Host Controls</h3>
-            <form id="multiplayer-playlist-form">
-                <label for="multiplayer-playlist-url">Spotify Playlist URL:</label>
-                <input type="text" id="multiplayer-playlist-url" name="playlist_url" required>
-                <button type="submit">Set Playlist</button>
-            </form>
-            <button id="multiplayer-play-button" disabled>Play Intro</button>
-            <button id="multiplayer-stop-button" disabled>Stop</button>
-            <button id="multiplayer-next-button" disabled>Next</button>
-        </div>
-        <div id="multiplayer-quiz-container">
-            <p id="multiplayer-track-info"></p>
-            <input type="range" id="multiplayer-playback-time" min="0.1" max="30" step="0.1" value="10">
-            <span id="multiplayer-playback-time-label">10.0 seconds</span>
-            <p id="multiplayer-answer" style="display: none;"></p>
-        </div>
-        <div id="multiplayer-status"></div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
     <script>
-        const socket = io();
-
         let currentAudio = null;
-        let isHost = false;
 
-        // Solo play logic
         document.getElementById('playlist-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const playlistUrl = document.getElementById('playlist_url').value;
@@ -144,99 +100,6 @@
             const match = url.match(regex);
             return match ? match[1] : '';
         }
-
-        // Multiplayer logic
-        document.getElementById('create-room-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const username = prompt("Enter your username");
-            if (username) {
-                socket.emit('create_room', {username});
-                isHost = true;
-                document.getElementById('host-controls').style.display = 'block';
-            }
-        });
-
-        document.getElementById('join-room-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const room = document.getElementById('join-room-id').value;
-            const username = prompt("Enter your username");
-            if (username && room) {
-                socket.emit('join', {room, username});
-                document.getElementById('multiplayer-quiz-container').style.display = 'block';
-            }
-        });
-
-        socket.on('room_created', (data) => {
-            alert(`Room created with ID: ${data.room_id}`);
-            document.getElementById('multiplayer-container').style.display = 'block';
-            document.getElementById('join-room-id').value = data.room_id;
-        });
-
-        socket.on('status', (data) => {
-            const statusDiv = document.getElementById('multiplayer-status');
-            const newStatus = document.createElement('p');
-            newStatus.innerText = data.msg;
-            statusDiv.appendChild(newStatus);
-        });
-
-        socket.on('room_data', (data) => {
-            console.log('Room data:', data);
-        });
-
-        document.getElementById('multiplayer-playlist-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const playlistUrl = document.getElementById('multiplayer-playlist-url').value;
-            const playlistId = extractPlaylistId(playlistUrl);
-            const room = document.getElementById('join-room-id').value;
-            socket.emit('set_playlist', {room, playlist_id: playlistId});
-            document.getElementById('multiplayer-play-button').disabled = false;
-            document.getElementById('multiplayer-next-button').disabled = false;
-        });
-
-        socket.on('track_info', (track) => {
-            document.getElementById('multiplayer-quiz-container').style.display = 'block';
-            document.getElementById('multiplayer-track-info').innerText = `Artist: ${track.artist}`;
-            document.getElementById('multiplayer-answer').innerText = `Track: ${track.name}`;
-            document.getElementById('multiplayer-answer').style.display = 'none';
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-            }
-            currentAudio = new Audio(track.preview_url);
-        });
-
-        document.getElementById('multiplayer-play-button').addEventListener('click', () => {
-            const room = document.getElementById('join-room-id').value;
-            const playbackTime = parseFloat(document.getElementById('multiplayer-playback-time').value);
-            socket.emit('play_intro', {room, playback_time: playbackTime});
-        });
-
-        document.getElementById('multiplayer-stop-button').addEventListener('click', () => {
-            const room = document.getElementById('join-room-id').value;
-            socket.emit('stop_intro', {room});
-        });
-
-        document.getElementById('multiplayer-next-button').addEventListener('click', () => {
-            const room = document.getElementById('join-room-id').value;
-            socket.emit('play_track', {room});
-        });
-
-        socket.on('play_intro', (track) => {
-            if (currentAudio) {
-                const playbackTime = parseFloat(document.getElementById('multiplayer-playback-time').value);
-                currentAudio.currentTime = 0;
-                currentAudio.play();
-                setTimeout(() => currentAudio.pause(), playbackTime * 1000);
-                document.getElementById('multiplayer-stop-button').disabled = false;
-            }
-        });
-
-        socket.on('stop_intro', () => {
-            if (currentAudio) {
-                currentAudio.pause();
-                document.getElementById('multiplayer-stop-button').disabled = true;
-            }
-        });
     </script>
 </body>
 </html>
