@@ -8,7 +8,10 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet')
+
+# 'eventlet'が正しくインストールされているか確認し、'async_mode'を指定
+async_mode = 'eventlet'
+socketio = SocketIO(app, async_mode=async_mode)
 
 client_id = os.getenv('SPOTIPY_CLIENT_ID')
 client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
