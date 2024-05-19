@@ -18,8 +18,8 @@
 <body>
     <h1>Spotify Intro Quiz</h1>
     <form id="playlist-form">
-        <label for="playlist_id">Spotify Playlist ID:</label>
-        <input type="text" id="playlist_id" name="playlist_id" required>
+        <label for="playlist_url">Spotify Playlist URL:</label>
+        <input type="text" id="playlist_url" name="playlist_url" required>
         <button type="submit">Start</button>
     </form>
     <div id="quiz-container">
@@ -34,7 +34,8 @@
     <script>
         document.getElementById('playlist-form').addEventListener('submit', async (event) => {
             event.preventDefault();
-            const playlistId = document.getElementById('playlist_id').value;
+            const playlistUrl = document.getElementById('playlist_url').value;
+            const playlistId = extractPlaylistId(playlistUrl);
             const response = await fetch('/quiz', {
                 method: 'POST',
                 headers: {
@@ -50,4 +51,25 @@
             document.getElementById('play-button').addEventListener('click', () => {
                 const audio = new Audio(track.preview_url);
                 const playbackTime = parseFloat(document.getElementById('playback-time').value);
-                aud
+                audio.play();
+                setTimeout(() => audio.pause(), playbackTime * 1000);
+            });
+        });
+
+        document.getElementById('playback-time').addEventListener('input', (event) => {
+            const playbackTime = event.target.value;
+            document.getElementById('playback-time-label').innerText = `${playbackTime} seconds`;
+        });
+
+        document.getElementById('answer-button').addEventListener('click', () => {
+            document.getElementById('answer').style.display = 'block';
+        });
+
+        function extractPlaylistId(url) {
+            const regex = /playlist\/([a-zA-Z0-9]+)\?/;
+            const match = url.match(regex);
+            return match ? match[1] : '';
+        }
+    </script>
+</body>
+</html>
