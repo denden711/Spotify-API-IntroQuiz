@@ -4,30 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Intro Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #quiz-container {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <h1>Spotify Intro Quiz</h1>
-    <div id="quiz-container"></div>
+    <form id="playlist-form">
+        <label for="playlist_id">Spotify Playlist ID:</label>
+        <input type="text" id="playlist_id" name="playlist_id" required>
+        <button type="submit">Start</button>
+    </form>
+    <div id="quiz-container">
+        <p id="track-info"></p>
+        <input type="range" id="playback-time" min="1" max="30" step="0.1" value="10">
+        <span id="playback-time-label">10.0 seconds</span>
+        <br>
+        <button id="play-button">Play Intro</button>
+        <button id="answer-button">Answer</button>
+        <p id="answer" style="display: none;"></p>
+    </div>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const response = await fetch('/quiz');
-            const tracks = await response.json();
-            const quizContainer = document.getElementById('quiz-container');
-
-            tracks.forEach(track => {
-                const trackElement = document.createElement('div');
-                trackElement.innerHTML = `
-                    <p><strong>${track.name}</strong> by ${track.artist}</p>
-                    <button onclick="playPreview('${track.preview_url}')">Play Intro</button>
-                `;
-                quizContainer.appendChild(trackElement);
+        document.getElementById('playlist-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const playlistId = document.getElementById('playlist_id').value;
+            const response = await fetch('/quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `playlist_id=${encodeURIComponent(playlistId)}`
             });
-        });
+            const track = await response.json();
+            document.getElementById('quiz-container').style.display = 'block';
+            document.getElementById('track-info').innerText = `Artist: ${track.artist}`;
+            document.getElementById('answer').innerText = `Track: ${track.name}`;
 
-        function playPreview(url) {
-            const audio = new Audio(url);
-            audio.play();
-        }
-    </script>
-</body>
-</html>
+            document.getElementById('play-button').addEventListener('click', () => {
+                const audio = new Audio(track.preview_url);
+                const playbackTime = parseFloat(document.getElementById('playback-time').value);
+                aud

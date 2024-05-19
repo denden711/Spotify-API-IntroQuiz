@@ -1,27 +1,29 @@
 import os
-from flask import Flask, jsonify, send_from_directory, render_template
+from flask import Flask, jsonify, render_template, request
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+import random
 
 app = Flask(__name__)
 
 client_id = os.getenv('SPOTIPY_CLIENT_ID')
 client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
-playlist_id = os.getenv('SPOTIPY_PLAYLIST_ID')
 
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=client_id, client_secret=client_secret))
 
-@app.route('/quiz', methods=['GET'])
+@app.route('/quiz', methods=['POST'])
 def get_quiz():
+    playlist_id = request.form['playlist_id']
     results = sp.playlist_tracks(playlist_id)
     tracks = [
         {
             'name': item['track']['name'],
             'artist': item['track']['artists'][0]['name'],
             'preview_url': item['track']['preview_url']
-        } for item in results['items']
+        } for item in results['items'] if item['track']['preview_url']
     ]
-    return jsonify(tracks)
+    random_track = random.choice(tracks)
+    return jsonify(random_track)
 
 @app.route('/')
 def home():
