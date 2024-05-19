@@ -24,18 +24,26 @@
     </form>
     <div id="quiz-container">
         <p id="track-info"></p>
-        <input type="range" id="playback-time" min="1" max="30" step="0.1" value="10">
+        <input type="range" id="playback-time" min="0.1" max="30" step="0.1" value="10">
         <span id="playback-time-label">10.0 seconds</span>
         <br>
         <button id="play-button">Play Intro</button>
+        <button id="stop-button" disabled>Stop</button>
+        <button id="next-button">Next</button>
         <button id="answer-button">Answer</button>
         <p id="answer" style="display: none;"></p>
     </div>
     <script>
+        let currentAudio = null;
+
         document.getElementById('playlist-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const playlistUrl = document.getElementById('playlist_url').value;
             const playlistId = extractPlaylistId(playlistUrl);
+            await loadQuiz(playlistId);
+        });
+
+        async function loadQuiz(playlistId) {
             const response = await fetch('/quiz', {
                 method: 'POST',
                 headers: {
@@ -47,13 +55,35 @@
             document.getElementById('quiz-container').style.display = 'block';
             document.getElementById('track-info').innerText = `Artist: ${track.artist}`;
             document.getElementById('answer').innerText = `Track: ${track.name}`;
+            document.getElementById('answer').style.display = 'none';
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            currentAudio = new Audio(track.preview_url);
+        }
 
-            document.getElementById('play-button').addEventListener('click', () => {
-                const audio = new Audio(track.preview_url);
+        document.getElementById('play-button').addEventListener('click', () => {
+            if (currentAudio) {
                 const playbackTime = parseFloat(document.getElementById('playback-time').value);
-                audio.play();
-                setTimeout(() => audio.pause(), playbackTime * 1000);
-            });
+                currentAudio.currentTime = 0;
+                currentAudio.play();
+                setTimeout(() => currentAudio.pause(), playbackTime * 1000);
+                document.getElementById('stop-button').disabled = false;
+            }
+        });
+
+        document.getElementById('stop-button').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.pause();
+                document.getElementById('stop-button').disabled = true;
+            }
+        });
+
+        document.getElementById('next-button').addEventListener('click', async () => {
+            const playlistUrl = document.getElementById('playlist_url').value;
+            const playlistId = extractPlaylistId(playlistUrl);
+            await loadQuiz(playlistId);
         });
 
         document.getElementById('playback-time').addEventListener('input', (event) => {
@@ -66,7 +96,7 @@
         });
 
         function extractPlaylistId(url) {
-            const regex = /playlist\/([a-zA-Z0-9]+)\?/;
+            const regex = /playlist\/([a-zA-Z0-9]+)/;
             const match = url.match(regex);
             return match ? match[1] : '';
         }
