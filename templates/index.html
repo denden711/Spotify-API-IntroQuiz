@@ -13,6 +13,9 @@
         #quiz-container {
             display: none;
         }
+        .error-message {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -33,6 +36,7 @@
         <button id="answer-button">Answer</button>
         <p id="answer" style="display: none;"></p>
     </div>
+    <p id="error-message" class="error-message"></p>
     <script>
         let currentAudio = null;
 
@@ -44,23 +48,32 @@
         });
 
         async function loadQuiz(playlistId) {
-            const response = await fetch('/quiz', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `playlist_id=${encodeURIComponent(playlistId)}`
-            });
-            const track = await response.json();
-            document.getElementById('quiz-container').style.display = 'block';
-            document.getElementById('track-info').innerText = `Artist: ${track.artist}`;
-            document.getElementById('answer').innerText = `Track: ${track.name}`;
-            document.getElementById('answer').style.display = 'none';
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
+            try {
+                const response = await fetch('/quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `playlist_id=${encodeURIComponent(playlistId)}`
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('quiz-container').style.display = 'block';
+                    document.getElementById('track-info').innerText = `Artist: ${data.artist}`;
+                    document.getElementById('answer').innerText = `Track: ${data.name}`;
+                    document.getElementById('answer').style.display = 'none';
+                    document.getElementById('error-message').innerText = '';
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                    currentAudio = new Audio(data.preview_url);
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'An error occurred. Please try again.';
             }
-            currentAudio = new Audio(track.preview_url);
         }
 
         document.getElementById('play-button').addEventListener('click', () => {
